@@ -38,6 +38,8 @@ def update_settings(
     if settings_in.delay_ms is not None:
         if settings_in.delay_ms >= 0:
             settings.delay_ms = settings_in.delay_ms
+    if settings_in.seed is not None:
+        settings.seed = settings_in.seed
             
     db.commit()
     db.refresh(settings)
@@ -54,7 +56,8 @@ def create_scenario(
         name=scenario_in.name,
         chaos_mode_enabled=scenario_in.chaos_mode_enabled,
         error_rate=scenario_in.error_rate,
-        delay_ms=scenario_in.delay_ms
+        delay_ms=scenario_in.delay_ms,
+        seed=scenario_in.seed
     )
     db.add(scenario)
     db.commit()
@@ -79,6 +82,7 @@ def apply_scenario(
     settings.chaos_mode_enabled = scenario.chaos_mode_enabled
     settings.error_rate = scenario.error_rate
     settings.delay_ms = scenario.delay_ms
+    settings.seed = scenario.seed
     db.commit()
     db.refresh(settings)
     return settings

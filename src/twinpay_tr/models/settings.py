@@ -9,3 +9,4 @@ class Settings(Base):
     chaos_mode_enabled = Column(Boolean, default=False, nullable=False)
     error_rate = Column(Integer, default=0, nullable=False)
     delay_ms = Column(Integer, default=0, nullable=False)
+    seed = Column(String, nullable=True)

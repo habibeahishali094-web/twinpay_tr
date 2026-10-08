@@ -9,6 +9,8 @@ from twinpay_tr.models.idempotency import IdempotencyKey
 from twinpay_tr.schemas.payment import PaymentCreate, PaymentResponse, Complete3DSecure
 from twinpay_tr.core.webhook import schedule_webhook
 from twinpay_tr.core.i18n import t, format_currency, format_date
+from twinpay_tr.api.v1.settings import get_or_create_settings
+from twinpay_tr.core.chaos import apply_delay, should_fail_payment
 
 router = APIRouter()
 
@@ -53,6 +55,9 @@ def create_payment(
     lang: str = Depends(deps.get_lang),
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key")
 ):
+    settings = get_or_create_settings(db, user_id)
+    apply_delay(settings)
+
     if idempotency_key:
         existing = get_idempotency_response(db, user_id, idempotency_key)
         if existing:
@@ -62,8 +67,14 @@ def create_payment(
     if payment_in.installments not in [1, 2, 3, 6, 9, 12]:
         raise HTTPException(status_code=400, detail=t("invalid_installments", lang))
     
+    chaos_error = should_fail_payment(settings)
+    
     card_mask = f"**** **** **** {payment_in.card_number[-4:]}" if len(payment_in.card_number) >= 4 else "****"
-    payment_status = "pending_3d" if payment_in.require_3d_secure else "authorized"
+    
+    if chaos_error:
+        payment_status = "failed"
+    else:
+        payment_status = "pending_3d" if payment_in.require_3d_secure else "authorized"
     
     new_payment = Payment(
         user_id=user_id,
@@ -72,6 +83,7 @@ def create_payment(
         status=payment_status,
         card_mask=card_mask,
         installments=payment_in.installments,
+        error_code=chaos_error,
         idempotency_key=idempotency_key
     )
     db.add(new_payment)
@@ -83,8 +95,10 @@ def create_payment(
     if idempotency_key:
         save_idempotency_response(db, user_id, idempotency_key, status.HTTP_201_CREATED, resp_data)
         
-    if payment_status == "authorized":
-        schedule_webhook(db, user_id, "payment.created", resp_data, background_tasks)
+    if payment_status == "authorized" or payment_status == "failed":
+        # we can trigger webhook for failures too
+        event_type = "payment.created" if payment_status == "authorized" else "payment.failed"
+        schedule_webhook(db, user_id, event_type, resp_data, background_tasks, settings)
         
     return resp_data
 
@@ -97,6 +111,9 @@ def complete_3d_secure(
     user_id: int = Depends(deps.get_user_id),
     lang: str = Depends(deps.get_lang)
 ):
+    settings = get_or_create_settings(db, user_id)
+    apply_delay(settings)
+    
     payment = db.query(Payment).filter(Payment.id == payment_id, Payment.user_id == user_id).first()
     if not payment:
         raise HTTPException(status_code=404, detail=t("payment_not_found", lang))
@@ -115,7 +132,7 @@ def complete_3d_secure(
     
     resp_data = _prepare_response(payment, lang)
     event_type = "payment.created" if payload.success else "payment.failed"
-    schedule_webhook(db, user_id, event_type, resp_data, background_tasks)
+    schedule_webhook(db, user_id, event_type, resp_data, background_tasks, settings)
     return resp_data
 
 @router.get("/{payment_id}", response_model=PaymentResponse)
@@ -125,6 +142,9 @@ def get_payment(
     user_id: int = Depends(deps.get_user_id),
     lang: str = Depends(deps.get_lang)
 ):
+    settings = get_or_create_settings(db, user_id)
+    apply_delay(settings)
+    
     payment = db.query(Payment).filter(Payment.id == payment_id, Payment.user_id == user_id).first()
     if not payment:
         raise HTTPException(status_code=404, detail=t("payment_not_found", lang))
@@ -138,6 +158,9 @@ def capture_payment(
     user_id: int = Depends(deps.get_user_id),
     lang: str = Depends(deps.get_lang)
 ):
+    settings = get_or_create_settings(db, user_id)
+    apply_delay(settings)
+    
     payment = db.query(Payment).filter(Payment.id == payment_id, Payment.user_id == user_id).first()
     if not payment:
         raise HTTPException(status_code=404, detail=t("payment_not_found", lang))
@@ -150,7 +173,7 @@ def capture_payment(
     db.refresh(payment)
     
     resp_data = _prepare_response(payment, lang)
-    schedule_webhook(db, user_id, "payment.captured", resp_data, background_tasks)
+    schedule_webhook(db, user_id, "payment.captured", resp_data, background_tasks, settings)
     return resp_data
 
 @router.post("/{payment_id}/cancel", response_model=PaymentResponse)
@@ -161,6 +184,9 @@ def cancel_payment(
     user_id: int = Depends(deps.get_user_id),
     lang: str = Depends(deps.get_lang)
 ):
+    settings = get_or_create_settings(db, user_id)
+    apply_delay(settings)
+    
     payment = db.query(Payment).filter(Payment.id == payment_id, Payment.user_id == user_id).first()
     if not payment:
         raise HTTPException(status_code=404, detail=t("payment_not_found", lang))
@@ -173,7 +199,7 @@ def cancel_payment(
     db.refresh(payment)
     
     resp_data = _prepare_response(payment, lang)
-    schedule_webhook(db, user_id, "payment.canceled", resp_data, background_tasks)
+    schedule_webhook(db, user_id, "payment.canceled", resp_data, background_tasks, settings)
     return resp_data
 
 @router.post("/{payment_id}/refund", response_model=PaymentResponse)
@@ -184,6 +210,9 @@ def refund_payment(
     user_id: int = Depends(deps.get_user_id),
     lang: str = Depends(deps.get_lang)
 ):
+    settings = get_or_create_settings(db, user_id)
+    apply_delay(settings)
+    
     payment = db.query(Payment).filter(Payment.id == payment_id, Payment.user_id == user_id).first()
     if not payment:
         raise HTTPException(status_code=404, detail=t("payment_not_found", lang))
@@ -196,5 +225,5 @@ def refund_payment(
     db.refresh(payment)
     
     resp_data = _prepare_response(payment, lang)
-    schedule_webhook(db, user_id, "payment.refunded", resp_data, background_tasks)
+    schedule_webhook(db, user_id, "payment.refunded", resp_data, background_tasks, settings)
     return resp_data
