@@ -11,6 +11,11 @@ Gerçek ödemelere dokunmadan entegrasyonlarınızı 3D Secure, taksit ve Türki
 - **İzolasyon Kuralı:** Sistem, her bir geliştiriciyi kendi API anahtarıyla (sandbox'ı ile) tam olarak izole eder.
 - **Idempotency (Tekrar Önleme):** `Idempotency-Key` başlığı sayesinde ağ problemlerinde bile ödemenin çift çekilmesini önleyin.
 
+## Bilinen Sınırlamalar
+- Geliştirici panelinde oturum (login) işlemi yapılırken API anahtarı `cookie`'de tutulmaktadır. Üretim ortamında sunucu tarafı oturum kimliği (session ID) kullanılmalıdır.
+- Login formunda CSRF token koruması bulunmamaktadır (riski düşüktür).
+- HTTPS kullanılıyorsa, çerez güvenliği için `COOKIE_SECURE=True` ortam değişkeniyle çalıştırılmalıdır (yerel geliştirmede varsayılan olarak `False`'dur).
+
 ## Kurulum ve Çalıştırma
 Proje Python 3.11+ gerektirir. Bağımlılık yönetimi için `requirements.txt` kullanılır.
 ```bash

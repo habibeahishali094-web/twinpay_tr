@@ -10,8 +10,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 def generate_api_key() -> tuple[str, str, str]:
-    raw_api_key = f"sk_test_{secrets.token_urlsafe(32)}"
-    prefix = raw_api_key[:16]
+    raw_api_key = f"twp_{secrets.token_urlsafe(32)}"
+    prefix = raw_api_key[:8]
     hashed_key = get_password_hash(raw_api_key)
     return raw_api_key, prefix, hashed_key
 

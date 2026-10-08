@@ -38,3 +38,28 @@ def test_isolation_other_user_data(client: TestClient):
     
     profileB = client.get("/api/v1/users/me", headers={"Authorization": f"Bearer {keyB}"})
     assert profileB.json()["username"] == "userB"
+
+def test_prefix_length(client: TestClient):
+    response = client.post("/api/v1/users/register", json={"username": "prefixuser"})
+    data = response.json()
+    assert len(data["api_key_prefix"]) == 8
+    assert data["api_key_prefix"].startswith("twp_")
+
+def test_login_cookie_flags(client: TestClient):
+    register_res = client.post("/api/v1/users/register", json={"username": "cookietest"})
+    api_key = register_res.json()["api_key"]
+    
+    response = client.post("/login", data={"api_key": api_key}, follow_redirects=False)
+    assert response.status_code == 302
+    
+    set_cookie = response.headers.get("set-cookie", "").lower()
+    assert "httponly" in set_cookie
+    assert "samesite=lax" in set_cookie
+
+def test_logout_deletes_cookie(client: TestClient):
+    response = client.get("/logout", follow_redirects=False)
+    assert response.status_code == 302
+    set_cookie = response.headers.get("set-cookie", "").lower()
+    assert "max-age=0" in set_cookie or "expires=" in set_cookie
+    assert "httponly" in set_cookie
+    assert "samesite=lax" in set_cookie

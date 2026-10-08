@@ -32,7 +32,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 user_id = None
                 if auth and auth.startswith("Bearer "):
                     token = auth.replace("Bearer ", "")
-                    prefix = token[:16]
+                    prefix = token[:8]
                     from twinpay_tr.core.security import verify_api_key
                     user = db.query(User).filter(User.api_key_prefix == prefix).first()
                     if user and verify_api_key(token, user.api_key_hash):

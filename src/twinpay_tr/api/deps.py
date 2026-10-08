@@ -22,7 +22,7 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> User:
     api_key = credentials.credentials
-    prefix = api_key[:16]
+    prefix = api_key[:8]
     
     user = db.query(User).filter(User.api_key_prefix == prefix).first()
     
