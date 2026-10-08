@@ -22,11 +22,17 @@ Proje Python 3.11+ gerektirir. Bağımlılık yönetimi için `requirements.txt`
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
+copy .env.example .env
 ```
 
-Çalıştırmak için:
+Testleri çalıştırmak için:
 ```bash
-uvicorn twinpay_tr.main:app --reload
+pytest -q
+```
+
+Uygulamayı çalıştırmak için:
+```bash
+uvicorn src.twinpay_tr.main:app --reload
 ```
 Panel ve API `http://127.0.0.1:8000` adresinde çalışacaktır.
 
