@@ -8,3 +8,4 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     api_key_prefix = Column(String, nullable=False)
     api_key_hash = Column(String, unique=True, nullable=False)
+    language = Column(String, default="tr", nullable=False)

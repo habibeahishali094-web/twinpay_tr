@@ -39,3 +39,11 @@ def get_user_id(current_user: User = Depends(get_current_user)) -> int:
     İzolasyon Kuralı: Tüm işlemler bu ID kullanılarak filtrelenmelidir.
     """
     return current_user.id
+
+from fastapi import Header
+def get_lang(
+    accept_language: str = Header(None, alias="Accept-Language"),
+    current_user: User = Depends(get_current_user)
+) -> str:
+    from twinpay_tr.core.i18n import get_language
+    return get_language(accept_language, current_user.language)

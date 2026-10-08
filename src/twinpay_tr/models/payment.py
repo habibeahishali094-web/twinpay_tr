@@ -11,5 +11,8 @@ class Payment(Base):
     currency = Column(String, default="TRY", nullable=False)
     status = Column(String, default="pending", nullable=False)
     card_mask = Column(String, nullable=False)
+    installments = Column(Integer, default=1, nullable=False)
+    error_code = Column(String, nullable=True)
+    error_message = Column(String, nullable=True)
     idempotency_key = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
