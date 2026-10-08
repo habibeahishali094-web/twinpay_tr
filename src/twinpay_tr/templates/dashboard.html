@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<nav>
+    <div class="brand">TwinPay TR</div>
+    <div class="nav-links">
+        <a href="/dashboard" class="active">Ödemeler</a>
+        <a href="/logs">İstek Kayıtları</a>
+        <a href="/logout">Çıkış Yap</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="grid-2" style="margin-bottom: 2rem;">
+        <div class="card">
+            <h2>Geliştirici Bilgileri</h2>
+            <p style="margin-top: 1rem;"><strong>Kullanıcı:</strong> {{ user.username }}</p>
+            <p><strong>Prefix:</strong> {{ user.api_key_prefix }}...</p>
+        </div>
+        <div class="card">
+            <h2>Kaos Modu & Ayarlar</h2>
+            <p style="color: var(--text-secondary);">Canlı ayarlarınız. API üzerinden /settings endpoint'i ile güncelleyebilirsiniz.</p>
+            <p><strong>Kaos Modu:</strong> {% if settings.chaos_mode_enabled %}<span style="color: var(--danger); font-weight: 600;">Açık</span>{% else %}<span style="color: var(--success); font-weight: 600;">Kapalı</span>{% endif %}</p>
+            <p><strong>Hata Oranı:</strong> %{{ settings.error_rate }}</p>
+            <p><strong>Gecikme:</strong> {{ settings.delay_ms }} ms</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Son İşlemler</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tutar</th>
+                    <th>Kart</th>
+                    <th>Taksit</th>
+                    <th>Durum</th>
+                    <th>Hata (Kaos)</th>
+                    <th>Tarih</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td>#{{ p.id }}</td>
+                    <td style="font-weight: 600;">{{ p.amount }} {{ p.currency }}</td>
+                    <td style="color: var(--text-secondary);">{{ p.card_mask }}</td>
+                    <td>{{ p.installments }}</td>
+                    <td><span class="badge {{ p.status }}">{{ p.status }}</span></td>
+                    <td style="color: var(--danger);">{{ p.error_code or '-' }}</td>
+                    <td style="color: var(--text-secondary);">{{ p.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">Henüz bir işlem yok.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

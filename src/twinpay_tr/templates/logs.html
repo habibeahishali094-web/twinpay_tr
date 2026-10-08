@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<nav>
+    <div class="brand">TwinPay TR</div>
+    <div class="nav-links">
+        <a href="/dashboard">Ödemeler</a>
+        <a href="/logs" class="active">İstek Kayıtları</a>
+        <a href="/logout">Çıkış Yap</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="card">
+        <h2>API İstek Kayıtları</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">Sandbox'ınıza gelen son 50 istek.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metot</th>
+                    <th>Yol (Path)</th>
+                    <th>Durum Kodu</th>
+                    <th>Tarih</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="font-weight: 600; color: {% if log.method == 'GET' %}var(--accent-color){% else %}var(--warning){% endif %}">{{ log.method }}</td>
+                    <td>{{ log.path }}</td>
+                    <td>
+                        <span class="badge {% if log.status_code >= 400 %}failed{% elif log.status_code >= 200 and log.status_code < 300 %}authorized{% else %}pending_3d{% endif %}">
+                            {{ log.status_code }}
+                        </span>
+                    </td>
+                    <td style="color: var(--text-secondary);">{{ log.created_at.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Henüz bir kayıt yok.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+    <div class="card" style="width: 100%; max-width: 400px; text-align: center;">
+        <h1 class="brand" style="margin-bottom: 0.5rem; font-size: 2rem;">TwinPay TR</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">Geliştirici Paneline Giriş</p>
+        
+        {% if error %}
+        <div style="background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="/login">
+            <input type="password" name="api_key" placeholder="API Anahtarınızı Girin (TwinPay_...)" required>
+            <button type="submit" style="width: 100%;">Giriş Yap</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
