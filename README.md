@@ -1,4 +1,4 @@
-# TwinPay TR 🚀 (Aşama 6)
+# TwinPay TR 🚀 
 Türkiye'ye özgü yerelleştirilmiş, geliştiriciler için premium bir sahte ödeme (sandbox) servisidir. 
 Gerçek ödemelere dokunmadan entegrasyonlarınızı 3D Secure, taksit ve Türkiye'ye özgü banka hatalarıyla test edin.
 
