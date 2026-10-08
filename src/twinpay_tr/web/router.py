@@ -17,8 +17,12 @@ def get_user_from_cookie(request: Request, db: Session):
     api_key = request.cookies.get("api_key")
     if not api_key:
         return None
-    token_hash = hashlib.sha256(api_key.encode()).hexdigest()
-    return db.query(User).filter(User.api_key_hash == token_hash).first()
+    prefix = api_key[:16]
+    from twinpay_tr.core.security import verify_api_key
+    user = db.query(User).filter(User.api_key_prefix == prefix).first()
+    if user and verify_api_key(api_key, user.api_key_hash):
+        return user
+    return None
 
 @router.get("/", response_class=HTMLResponse)
 def index(request: Request):
@@ -26,9 +30,10 @@ def index(request: Request):
 
 @router.post("/login")
 def login(request: Request, api_key: str = Form(...), db: Session = Depends(get_db)):
-    token_hash = hashlib.sha256(api_key.encode()).hexdigest()
-    user = db.query(User).filter(User.api_key_hash == token_hash).first()
-    if not user:
+    prefix = api_key[:16]
+    from twinpay_tr.core.security import verify_api_key
+    user = db.query(User).filter(User.api_key_prefix == prefix).first()
+    if not user or not verify_api_key(api_key, user.api_key_hash):
         return templates.TemplateResponse("login.html", {"request": request, "error": "Geçersiz API Anahtarı"})
         
     response = RedirectResponse(url="/dashboard", status_code=302)

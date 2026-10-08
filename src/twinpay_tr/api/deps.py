@@ -22,9 +22,9 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> User:
     api_key = credentials.credentials
-    hashed_incoming = hashlib.sha256(api_key.encode()).hexdigest()
+    prefix = api_key[:16]
     
-    user = db.query(User).filter(User.api_key_hash == hashed_incoming).first()
+    user = db.query(User).filter(User.api_key_prefix == prefix).first()
     
     if not user or not verify_api_key(api_key, user.api_key_hash):
         raise HTTPException(

@@ -1,21 +1,19 @@
 import secrets
-import hashlib
-import hmac
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 def generate_api_key() -> tuple[str, str, str]:
-    """
-    Generates a new API key, its prefix (first 8 chars), and its SHA-256 hash.
-    Returns: (api_key, prefix, hashed_key)
-    """
-    api_key = f"sk_test_{secrets.token_urlsafe(32)}"
-    prefix = api_key[:16] # e.g. "sk_test_" + 8 characters
-    
-    hashed_key = hashlib.sha256(api_key.encode()).hexdigest()
-    return api_key, prefix, hashed_key
+    raw_api_key = f"sk_test_{secrets.token_urlsafe(32)}"
+    prefix = raw_api_key[:16]
+    hashed_key = get_password_hash(raw_api_key)
+    return raw_api_key, prefix, hashed_key
 
-def verify_api_key(plain_api_key: str, hashed_api_key: str) -> bool:
-    """
-    Verifies a plain API key against its hashed version.
-    """
-    hashed_plain = hashlib.sha256(plain_api_key.encode()).hexdigest()
-    return hmac.compare_digest(hashed_plain, hashed_api_key)
+def verify_api_key(api_key: str, hashed_key: str) -> bool:
+    return verify_password(api_key, hashed_key)
