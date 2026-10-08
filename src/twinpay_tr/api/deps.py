@@ -42,8 +42,11 @@ def get_user_id(current_user: User = Depends(get_current_user)) -> int:
 
 from fastapi import Header
 def get_lang(
+    db: Session = Depends(get_db),
     accept_language: str = Header(None, alias="Accept-Language"),
     current_user: User = Depends(get_current_user)
 ) -> str:
     from twinpay_tr.core.i18n import get_language
-    return get_language(accept_language, current_user.language)
+    from twinpay_tr.api.v1.settings import get_or_create_settings
+    settings = get_or_create_settings(db, current_user.id)
+    return get_language(accept_language, settings.language)
